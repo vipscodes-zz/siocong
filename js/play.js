@@ -23,6 +23,43 @@ var ScenePlay = new Phaser.Class({
         this.load.image('peluru', 'assets/Peluru.png');
         this.load.image('panel', 'assets/Panel_Nilai.png');
 
+        this.load.image('particle_blue', 'assets/particle_blue.png');
+
+        this.load.audio('ambience', [
+            'assets/audio/ambience.ogg',
+            'assets/audio/ambience.mp3',
+        ]);
+
+        this.load.audio('dead', [
+            'assets/audio/dead.ogg',
+            'assets/audio/dead.mp3',
+        ]);
+
+        this.load.audio('klik_1', [
+            'assets/audio/klik_1.ogg',
+            'assets/audio/klik_1.mp3',
+        ]);
+
+        this.load.audio('klik_2', [
+            'assets/audio/klik_2.ogg',
+            'assets/audio/klik_2.mp3',
+        ]);
+
+        this.load.audio('klik_3', [
+            'assets/audio/klik_3.ogg',
+            'assets/audio/klik_3.mp3',
+        ]);
+
+        this.load.audio('touch', [
+            'assets/audio/touch.ogg',
+            'assets/audio/touch.mp3',
+        ]);
+
+        this.load.audio('transisi_menu', [
+            'assets/audio/transisi_menu.ogg',
+            'assets/audio/transisi_menu.mp3',
+        ]);
+
         this.score = 0;
 
         this.isGameRunning = false;
@@ -30,6 +67,9 @@ var ScenePlay = new Phaser.Class({
 
         this.timer_halangan = 0;
         this.halangan = [];
+
+        this.highscore = localStorage["highscore"] || 0;
+
     },
 
     startGame: function () {
@@ -62,6 +102,8 @@ var ScenePlay = new Phaser.Class({
         this.chara.setVisible(true);
         this.chara.setScale(1);
 
+        this.trail.setVisible(true);
+
         this.score = 0;
         this.label_score.setText(this.score);
     },
@@ -93,11 +135,23 @@ var ScenePlay = new Phaser.Class({
 
         this.chara.setVisible(false);
 
+        this.trail.setVisible(false);
+
         for (let i = 0; i < this.halangan.length; i++) {
             this.halangan[i].destroy();
         }
 
         this.halangan.splice(0, this.halangan.length);
+
+        // save to local storage
+        if (this.score > this.highscore) {
+            this.highscore = this.score;
+            localStorage["highscore"] = this.highscore;
+        }
+
+        this.label_score.setText("Highscore " + this.highscore);
+
+        this.sTransition.play({ 'delay': 0.75 });
     },
 
     onObjectClick: function (pointer, gameObject) {
@@ -116,8 +170,11 @@ var ScenePlay = new Phaser.Class({
         console.log('Object End Click');
 
         if (!this.isGameRunning && gameObject == this.button_play) {
+            this.sTouch.play();
             this.startGame();
         }
+
+        this.label_score.setText("Highscore: " + this.highscore);
     },
 
     onPointerUp: function (pointer, currentlyOver) {
@@ -131,6 +188,8 @@ var ScenePlay = new Phaser.Class({
             duration: 750,
             y: this.chara.y + 200
         });
+
+        this.sClick[Math.floor((Math.random() * 2))].play();
     },
 
     startInputEvents: function () {
@@ -146,16 +205,40 @@ var ScenePlay = new Phaser.Class({
         // this.add.image(x,y,name asset)
         this.time.delayedCall(0, this.startInputEvents, [], this);
 
+
+
+        this.mAmbience = this.sound.add('ambience');
+        this.mAmbience.loop = true;
+        this.mAmbience.setVolume(0.35);
+        this.mAmbience.play();
+
+        this.sDead = this.sound.add('dead');
+        this.sClick = [];
+        this.sClick.push(this.sound.add('klik_1'));
+        this.sClick.push(this.sound.add('klik_2'));
+        this.sClick.push(this.sound.add('klik_3'));
+
+        for (let i = 0; i < this.sClick.length; i++) {
+            this.sClick[i].setVolume(0.5);
+        }
+
+        this.sTouch = this.sound.add('touch');
+        this.sTransition = this.sound.add('transisi_menu');
+
+        this.sTransition.play({ 'delay': 0.75 });
+
         this.panel_score = this.add.image(1366 / 2, 60, 'panel');
         this.panel_score.setOrigin(0.5);
-        this.panel_score.setDepth(10);
+        this.panel_score.setDepth(11);
         this.panel_score.setAlpha(0.8);
 
         this.label_score = this.add.text(this.panel_score.x + 25, this.panel_score.y, this.score);
         this.label_score.setOrigin(0.5);
-        this.label_score.setDepth(10);
+        this.label_score.setDepth(11);
         this.label_score.setFontSize(30);
         this.label_score.setTint(0xff732e);
+
+        this.label_score.setText("Highscore " + this.highscore);
 
         var bg_x = 1366 / 2;
 
@@ -225,6 +308,30 @@ var ScenePlay = new Phaser.Class({
 
         this.chara.setVisible(false);
 
+        this.trail = this.add.particles('particle_blue');
+
+        this.trailEmiter = this.trail.createEmitter({
+            x: 0,
+            y: 0,
+            angle: {
+                min: 0,
+                max: 360
+            },
+            scale: {
+                start: 1,
+                end: 0
+            },
+            blendMode: 'SCREEN',
+            lifespan: 400,
+            speed: 100,
+            on: true,
+            follow: this.chara,
+            tint: 0xff1d00
+        });
+
+        this.trailEmiter.emitParticle(16);
+        this.trail.setDepth(20);
+        this.trail.setVisible(false);
     },
 
     update: function (time, delta) {
@@ -276,6 +383,7 @@ var ScenePlay = new Phaser.Class({
                     this.halangan.splice(i, 1);
                 }
             }
+
             // score
             for (let i = this.halangan.length - 1; i >= 0; i--) {
                 if (this.chara.x > this.halangan[i].x + 50 && this.halangan[i].getData("status_aktif") == true) {
@@ -299,6 +407,8 @@ var ScenePlay = new Phaser.Class({
 
                     var myScene = this;
 
+                    this.sDead.play();
+
                     this.charaTweens = this.tweens.add({
                         targets: this.chara,
                         ease: 'Power1',
@@ -314,6 +424,9 @@ var ScenePlay = new Phaser.Class({
             if (this.chara.y < -50) {
                 this.isGameRunning = false;
                 var myScene = this;
+
+                this.sDead.play();
+
                 this.charaTweens = this.tweens.add({
                     targets: this.chara,
                     ease: 'Power1',
