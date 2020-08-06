@@ -447,7 +447,16 @@ var config = {
     type: Phaser.AUTO,
     width: 1366,
     heisght: 768,
-    scene: [ScenePlay]
+    audio: {
+        disableWebAudio: true
+    },
+    scene: [ScenePlay],
+    callbacks: {
+        postBoot: function (game) {
+            game.canvas.style.width = '100%';
+            game.canvas.style.height = '100%';
+        }
+    }
 }
 
 var game = new Phaser.Game(config);
