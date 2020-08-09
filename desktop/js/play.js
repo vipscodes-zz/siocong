@@ -189,6 +189,7 @@ var ScenePlay = new Phaser.Class({
             y: this.chara.y + 200
         });
 
+        // sound click
         this.sClick[Math.floor((Math.random() * 2))].play();
     },
 
@@ -446,7 +447,7 @@ var ScenePlay = new Phaser.Class({
 var config = {
     type: Phaser.AUTO,
     width: 1366,
-    heisght: 768,
+    height: 768,
     audio: {
         disableWebAudio: true
     },
